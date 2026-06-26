@@ -8,627 +8,407 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #f5f5f3;
-    --surface: #ffffff;
-    --surface2: #f1efe8;
-    --border: rgba(0,0,0,0.12);
-    --border2: rgba(0,0,0,0.25);
-    --text: #1a1a18;
-    --text2: #5f5e5a;
-    --text3: #888780;
-    --accent: #3266ad;
-    --radius: 10px;
-    --radius-sm: 6px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f3;--surface:#fff;--surface2:#f1efe8;
+  --border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.25);
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
+  --accent:#3266ad;--radius:10px;--radius-sm:6px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1a1a18;--surface:#2c2c2a;--surface2:#242422;
+    --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.2);
+    --text:#f1efe8;--text2:#b4b2a9;--text3:#888780;--accent:#85b7eb;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1a1a18;
-      --surface: #2c2c2a;
-      --surface2: #242422;
-      --border: rgba(255,255,255,0.1);
-      --border2: rgba(255,255,255,0.2);
-      --text: #f1efe8;
-      --text2: #b4b2a9;
-      --text3: #888780;
-      --accent: #85b7eb;
-    }
-  }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 14px;
-    line-height: 1.5;
-    min-height: 100vh;
-  }
-  header {
-    background: var(--surface);
-    border-bottom: 0.5px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 56px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    gap: 10px;
-  }
-  header h1 { font-size: 16px; font-weight: 500; flex-shrink: 0; }
-  .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    border: none;
-  }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { opacity: 0.88; }
-  .btn-secondary {
-    background: transparent;
-    color: var(--text2);
-    border: 0.5px solid var(--border2);
-  }
-  .btn-secondary:hover { background: var(--surface2); }
-  .btn-share {
-    background: #1d9e75;
-    color: #fff;
-  }
-  .btn-share:hover { opacity: 0.88; }
-  #fileInput { display: none; }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+header{background:var(--surface);border-bottom:.5px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;gap:10px}
+header h1{font-size:16px;font-weight:500;flex-shrink:0}
+.hdr-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border:none}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.88}
+.btn-secondary{background:transparent;color:var(--text2);border:.5px solid var(--border2)}.btn-secondary:hover{background:var(--surface2)}
+.btn-share{background:#1d9e75;color:#fff}.btn-share:hover{opacity:.88}
+#fileInput{display:none}
 
-  .share-toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: #1a1a18;
-    color: #f1efe8;
-    padding: 10px 20px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    transition: transform 0.25s ease;
-    z-index: 999;
-    pointer-events: none;
-  }
-  .share-toast.show { transform: translateX(-50%) translateY(0); }
+/* filter bar */
+.filter-bar{background:var(--surface);border-bottom:.5px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fg{display:flex;align-items:center;gap:6px}
+.fg>label{font-size:12px;color:var(--text2);white-space:nowrap}
+.filter-reset{padding:5px 12px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:transparent;color:var(--text2);font-size:12px;cursor:pointer}
+.filter-reset:hover{background:var(--surface2)}
 
-  .filter-bar {
-    background: var(--surface);
-    border-bottom: 0.5px solid var(--border);
-    padding: 10px 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .filter-group { display: flex; align-items: center; gap: 6px; }
-  .filter-group label { font-size: 12px; color: var(--text2); white-space: nowrap; }
-  .filter-group select {
-    padding: 5px 24px 5px 8px;
-    border: 0.5px solid var(--border2);
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    color: var(--text);
-    font-size: 13px;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 6px center;
-    cursor: pointer;
-    min-width: 120px;
-  }
-  .filter-group select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .filter-reset {
-    padding: 5px 12px;
-    border: 0.5px solid var(--border2);
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text2);
-    font-size: 12px;
-    cursor: pointer;
-  }
-  .filter-reset:hover { background: var(--surface2); }
+/* searchable select */
+.ss{position:relative}
+.ss-trigger{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 8px;min-width:130px;max-width:180px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;user-select:none}
+.ss-trigger:hover{border-color:var(--accent)}
+.ss-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:200px;max-width:280px;background:var(--surface);border:.5px solid var(--border2);border-radius:var(--radius-sm);box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:200;overflow:hidden}
+.ss-panel.open{display:block}
+.ss-input{width:100%;padding:8px 10px;border:none;border-bottom:.5px solid var(--border);background:transparent;color:var(--text);font-size:13px;outline:none}
+.ss-list{overflow-y:auto;max-height:220px}
+.ss-item{padding:7px 12px;font-size:13px;cursor:pointer;color:var(--text)}
+.ss-item:hover{background:var(--surface2)}
+.ss-item.sel{color:var(--accent);font-weight:500}
 
-  main { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:12px;color:var(--text3);text-align:center}
+.empty-state svg{opacity:.3}
+.empty-state p{font-size:15px}
+.empty-state small{font-size:12px}
 
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 50vh;
-    gap: 12px;
-    color: var(--text3);
-    text-align: center;
-  }
-  .empty-state svg { opacity: 0.3; }
-  .empty-state p { font-size: 15px; }
-  .empty-state small { font-size: 12px; }
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.stat-card{background:var(--surface2);border-radius:var(--radius-sm);padding:14px 16px}
+.stat-card .lbl{font-size:11px;color:var(--text2);margin-bottom:4px}
+.stat-card .val{font-size:22px;font-weight:500;line-height:1.2}
+.stat-card .sub{font-size:11px;color:var(--text3);margin-top:2px}
 
-  .stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  .stat-card { background: var(--surface2); border-radius: var(--radius-sm); padding: 14px 16px; }
-  .stat-card .label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
-  .stat-card .value { font-size: 22px; font-weight: 500; line-height: 1.2; }
-  .stat-card .sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
+.chart-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.chart-card h3{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:3px}
+.chart-hint{font-size:11px;color:var(--text3);margin-bottom:10px}
+.chart-wrap{position:relative;width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 
-  .chart-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: 14px;
-  }
-  .chart-card {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-  }
-  .chart-card h3 { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 12px; }
-  .chart-wrap { position: relative; width: 100%; }
+/* modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;overflow-y:auto;padding:40px 20px}
+.modal-overlay.open{display:block}
+.modal-box{background:var(--surface);border-radius:var(--radius);max-width:900px;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:.5px solid var(--border)}
+.modal-head h2{font-size:15px;font-weight:500}
+.modal-close{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--text2);border-radius:4px;cursor:pointer;font-size:18px;line-height:1}
+.modal-close:hover{background:var(--surface2)}
+.modal-body{overflow-x:auto;max-height:65vh;overflow-y:auto}
+.modal-table{width:100%;border-collapse:collapse;font-size:13px}
+.modal-table th{text-align:left;padding:10px 14px;font-size:11px;font-weight:500;color:var(--text2);border-bottom:.5px solid var(--border);background:var(--surface2);position:sticky;top:0}
+.modal-table td{padding:9px 14px;border-bottom:.5px solid var(--border);color:var(--text)}
+.modal-table tr:last-child td{border-bottom:none}
+.modal-table tbody tr:hover td{background:var(--surface2)}
+.modal-foot{padding:10px 20px;border-top:.5px solid var(--border);font-size:12px;color:var(--text3)}
 
-  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
-  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.share-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a18;color:#f1efe8;padding:10px 20px;border-radius:var(--radius-sm);font-size:13px;transition:transform .25s ease;z-index:999;pointer-events:none}
+.share-toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
 <header>
   <h1>HR 인력 대시보드</h1>
-  <div class="header-actions">
+  <div class="hdr-actions">
     <button class="btn btn-secondary" onclick="downloadTemplate()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       양식 다운로드
     </button>
-    <button class="btn btn-share" id="shareBtn" style="display:none;" onclick="copyShareURL()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    <button class="btn btn-share" id="shareBtn" style="display:none" onclick="copyShareURL()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       공유 URL 복사
     </button>
     <label class="btn btn-primary">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       엑셀 업로드
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
     </label>
   </div>
 </header>
 
-<div class="filter-bar" id="filterBar" style="display:none;">
-  <div class="filter-group">
-    <label>Chief</label>
-    <select id="fChief"><option value="">전체</option></select>
-  </div>
-  <div class="filter-group">
-    <label>CC</label>
-    <select id="fCC"><option value="">전체</option></select>
-  </div>
-  <div class="filter-group">
-    <label>실</label>
-    <select id="fSil"><option value="">전체</option></select>
-  </div>
-  <div class="filter-group">
-    <label>팀</label>
-    <select id="fTeam"><option value="">전체</option></select>
-  </div>
+<div class="filter-bar" id="filterBar" style="display:none">
+  <div class="fg"><label>Chief</label><div class="ss" id="ss-chief"><div class="ss-trigger" id="ss-chief-trigger"><span class="ss-val" id="ss-chief-val">전체</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div><div class="ss-panel" id="ss-chief-panel"><input type="text" class="ss-input" id="ss-chief-input" placeholder="검색..."><div class="ss-list" id="ss-chief-list"></div></div></div></div>
+  <div class="fg"><label>CC</label><div class="ss" id="ss-cc"><div class="ss-trigger" id="ss-cc-trigger"><span class="ss-val" id="ss-cc-val">전체</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div><div class="ss-panel" id="ss-cc-panel"><input type="text" class="ss-input" id="ss-cc-input" placeholder="검색..."><div class="ss-list" id="ss-cc-list"></div></div></div></div>
+  <div class="fg"><label>실</label><div class="ss" id="ss-sil"><div class="ss-trigger" id="ss-sil-trigger"><span class="ss-val" id="ss-sil-val">전체</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div><div class="ss-panel" id="ss-sil-panel"><input type="text" class="ss-input" id="ss-sil-input" placeholder="검색..."><div class="ss-list" id="ss-sil-list"></div></div></div></div>
+  <div class="fg"><label>팀</label><div class="ss" id="ss-team"><div class="ss-trigger" id="ss-team-trigger"><span class="ss-val" id="ss-team-val">전체</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div><div class="ss-panel" id="ss-team-panel"><input type="text" class="ss-input" id="ss-team-input" placeholder="검색..."><div class="ss-list" id="ss-team-list"></div></div></div></div>
   <button class="filter-reset" onclick="resetFilters()">초기화</button>
-  <span id="countBadge" style="margin-left:auto; font-size:12px; color:var(--text3);"></span>
+  <span id="countBadge" style="margin-left:auto;font-size:12px;color:var(--text3)"></span>
 </div>
 
-<main id="main">
+<main>
   <div class="empty-state" id="emptyState">
     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <polyline points="14 2 14 8 20 8"/>
-      <line x1="16" y1="13" x2="8" y2="13"/>
-      <line x1="16" y1="17" x2="8" y2="17"/>
-      <polyline points="10 9 9 9 8 9"/>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
     </svg>
     <p>엑셀 파일을 업로드하면 대시보드가 표시됩니다</p>
     <small>지원 형식: .xlsx, .xls, .csv</small>
   </div>
-
-  <div id="dashboard" style="display:none;">
+  <div id="dashboard" style="display:none">
     <div class="stat-grid" id="statGrid"></div>
     <div class="chart-grid" id="chartGrid"></div>
   </div>
 </main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="modalTitle"></h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <table class="modal-table">
+        <thead><tr><th>이름</th><th>부서</th><th>직책</th><th>연봉</th><th>평가등급</th><th>근속기간</th><th>경력</th></tr></thead>
+        <tbody id="modalTbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
 
 <div class="share-toast" id="shareToast">URL이 클립보드에 복사되었습니다</div>
 
 <script>
 let allData = [];
 let charts = {};
+const SS_KEYS = ['chief','cc','sil','team'];
+const ssVal = {chief:'',cc:'',sil:'',team:''};
 
-const COLORS = ['#3266ad','#1d9e75','#d85a30','#7f77dd','#ba7517','#d4537e','#639922','#e24b4a','#0f6e56','#993c1d'];
+const GRADE_COLORS  = ['#3b82f6','#22c55e','#84cc16','#f59e0b','#ef4444','#9ca3af'];
+const POS_COLORS    = ['#3266ad','#1d9e75','#d85a30','#7f77dd','#ba7517','#d4537e','#639922','#e24b4a','#0f6e56','#993c1d'];
+const TENURE_COLORS = ['#bfdbfe','#93c5fd','#60a5fa','#3b82f6','#1d4ed8'];
+const CAREER_COLORS = ['#ccfbf1','#99f6e4','#5eead4','#2dd4bf','#0d9488','#0f766e'];
 
-function downloadTemplate() {
-  const headers = ['이름','Chief','CC','실','팀','직책','연봉','평가등급','입사일','경력연수'];
-  const desc    = ['직원 이름','최상위 조직','CC 단위 조직','실 단위 조직 (선택)','팀 단위 조직 (선택)',
-                   '임원/팀장/파트장/팀원','연간 급여 원 단위 숫자','S/A/B/C/D (선택)','YYYY-MM-DD (선택)','숫자 (선택)'];
-  const req     = ['필수','필수','필수','선택','선택','필수','필수','선택','선택','선택'];
-  const samples = [
+const GRADE_DEFS = [
+  {key:'GE',label:'Greatly Exceed / S', match:v=>/^(greatly.?exceed|GE|S)$/i.test(v)},
+  {key:'EX',label:'Exceed / A',          match:v=>/^(exceed|EX|A)$/i.test(v)},
+  {key:'AC',label:'Achieve / B',         match:v=>/^(achieve|AC|B)$/i.test(v)},
+  {key:'NI',label:'Need Improvement / C',match:v=>/^(need.?improvement|NI|C)$/i.test(v)},
+  {key:'UN',label:'Unsatisfactory / D',  match:v=>/^(unsatisfactory|UN|D)$/i.test(v)},
+  {key:'-', label:'-',                   match:()=>true},
+];
+
+const TENURE_B = {
+  labels:['1년 미만','1년~3년 미만','3년~5년 미만','5년~10년 미만','10년 이상'],
+  fn:[d=>d.tenure<1, d=>d.tenure>=1&&d.tenure<3, d=>d.tenure>=3&&d.tenure<5, d=>d.tenure>=5&&d.tenure<10, d=>d.tenure>=10]
+};
+const CAREER_B = {
+  labels:['4년 미만','4년~8년 미만','8년~12년 미만','12년~16년 미만','16년~20년 미만','20년 이상'],
+  fn:[d=>d.career<4, d=>d.career>=4&&d.career<8, d=>d.career>=8&&d.career<12, d=>d.career>=12&&d.career<16, d=>d.career>=16&&d.career<20, d=>d.career>=20]
+};
+
+function fmtNum(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function fmtSalary(n){if(!n)return'-';return fmtNum(Math.round(n/10000))+'만 원'}
+function fmtTenure(y){
+  const yr=Math.floor(y),mo=Math.round((y-yr)*12);
+  if(yr===0)return mo+'개월';
+  if(mo===0)return yr+'년';
+  return yr+'년 '+mo+'개월';
+}
+
+function downloadTemplate(){
+  const H=['이름','Chief','CC','실','팀','직책','연봉','평가등급','입사일','경력연수'];
+  const D=['직원 이름','최상위 조직','CC 단위 조직','실 단위 조직 (선택)','팀 단위 조직 (선택)','임원/팀장/파트장/팀원','연간 급여 원 단위 숫자','S/A/B/C/D 또는 영문 전체 (선택)','YYYY-MM-DD (선택)','숫자 (선택)'];
+  const R=['필수','필수','필수','선택','선택','필수','필수','선택','선택','선택'];
+  const S=[
     ['홍길동','게임사업부문','개발CC','개발1실','서버개발팀','팀장',80000000,'A','2018-03-15',12],
     ['김영희','게임사업부문','개발CC','개발1실','클라이언트팀','팀원',55000000,'B','2021-07-01',6],
     ['이철수','경영지원부문','경영CC','','','임원',120000000,'S','2015-01-10',20],
     ['박지수','게임사업부문','QA CC','QA실','QA팀','팀원',48000000,'B','2022-09-20',3],
     ['최민준','경영지원부문','HR CC','','인사팀','파트장',63000000,'A','2019-06-15',9],
   ];
-
-  const wb = XLSX.utils.book_new();
-  const ws1 = XLSX.utils.aoa_to_sheet([headers, ...samples]);
-  ws1['!cols'] = headers.map(() => ({ wch: 18 }));
-  XLSX.utils.book_append_sheet(wb, ws1, '명단입력');
-
-  const guideRows = [
-    ['컬럼명','예시','설명','필수여부'],
-    ...headers.map((h,i) => [h, String(samples[0][i] ?? ''), desc[i], req[i]])
-  ];
-  const ws2 = XLSX.utils.aoa_to_sheet(guideRows);
-  ws2['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 36 }, { wch: 10 }];
-  XLSX.utils.book_append_sheet(wb, ws2, '컬럼설명');
-
-  XLSX.writeFile(wb, 'HR_명단_양식.xlsx');
+  const wb=XLSX.utils.book_new();
+  const ws1=XLSX.utils.aoa_to_sheet([H,...S]);
+  ws1['!cols']=H.map(()=>({wch:18}));
+  XLSX.utils.book_append_sheet(wb,ws1,'명단입력');
+  const ws2=XLSX.utils.aoa_to_sheet([['컬럼명','예시','설명','필수여부'],...H.map((h,i)=>[h,String(S[0][i]??''),D[i],R[i]])]);
+  ws2['!cols']=[{wch:14},{wch:18},{wch:40},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws2,'컬럼설명');
+  XLSX.writeFile(wb,'HR_명단_양식.xlsx');
 }
 
-document.getElementById('fileInput').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    try {
-      const wb = XLSX.read(evt.target.result, { type: 'binary', cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
-      allData = raw.map(r => normalize(r));
-      if (allData.length === 0) { alert('데이터가 없습니다.'); return; }
-      saveToURL();
-      initFilters();
-      render();
-    } catch(err) {
-      alert('파일을 읽는 중 오류가 발생했습니다: ' + err.message);
-    }
+document.getElementById('fileInput').addEventListener('change',function(e){
+  const file=e.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'binary',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+      allData=raw.map(normalize);
+      if(!allData.length){alert('데이터가 없습니다.');return;}
+      saveToURL(); initFilters(); render();
+    }catch(err){alert('파일 읽기 오류: '+err.message);}
   };
-  reader.readAsBinaryString(file);
-  e.target.value = '';
+  reader.readAsBinaryString(file); e.target.value='';
 });
 
-function saveToURL() {
-  const json = JSON.stringify(allData);
-  const compressed = LZString.compressToEncodedURIComponent(json);
-  history.replaceState(null, '', '#d=' + compressed);
-  document.getElementById('shareBtn').style.display = 'inline-flex';
+function saveToURL(){
+  history.replaceState(null,'','#d='+LZString.compressToEncodedURIComponent(JSON.stringify(allData)));
+  document.getElementById('shareBtn').style.display='inline-flex';
+}
+function loadFromURL(){
+  const h=location.hash; if(!h.startsWith('#d='))return;
+  try{
+    const json=LZString.decompressFromEncodedURIComponent(h.slice(3));
+    if(!json)return;
+    allData=JSON.parse(json); if(!allData.length)return;
+    document.getElementById('shareBtn').style.display='inline-flex';
+    initFilters(); render();
+  }catch(e){}
+}
+function copyShareURL(){
+  navigator.clipboard.writeText(location.href).then(()=>{
+    const t=document.getElementById('shareToast');
+    t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200);
+  }).catch(()=>prompt('아래 URL을 복사하세요:',location.href));
 }
 
-function loadFromURL() {
-  const hash = location.hash;
-  if (!hash.startsWith('#d=')) return false;
-  try {
-    const compressed = hash.slice(3);
-    const json = LZString.decompressFromEncodedURIComponent(compressed);
-    if (!json) return false;
-    allData = JSON.parse(json);
-    if (!allData.length) return false;
-    document.getElementById('shareBtn').style.display = 'inline-flex';
-    initFilters();
-    render();
-    return true;
-  } catch(e) {
-    return false;
+function normalize(row){
+  const get=(...keys)=>{for(const k of keys){const v=row[k]??row[k.toLowerCase()]??row[k.toUpperCase()]??'';if(v!=='')return String(v).trim();}return '';};
+  const salary=parseFloat(String(get('연봉','salary')).replace(/,/g,''))||0;
+  let tenure=0;
+  const joinRaw=get('입사일','join_date','입사년도');
+  if(joinRaw){
+    const num=parseFloat(joinRaw);
+    if(!isNaN(num)&&num<100){tenure=num;}
+    else{const d=new Date(joinRaw);if(!isNaN(d.getTime()))tenure=(Date.now()-d.getTime())/(1000*60*60*24*365.25);}
   }
-}
-
-function copyShareURL() {
-  const url = location.href;
-  navigator.clipboard.writeText(url).then(() => {
-    const t = document.getElementById('shareToast');
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
-  }).catch(() => {
-    prompt('아래 URL을 복사하세요:', url);
-  });
-}
-
-function normalize(row) {
-  const get = (...keys) => {
-    for (const k of keys) {
-      const v = row[k] ?? row[k.toLowerCase()] ?? row[k.toUpperCase()] ?? '';
-      if (v !== '') return String(v).trim();
-    }
-    return '';
-  };
-  const salary = parseFloat(String(get('연봉','salary','Salary')).replace(/,/g,'')) || 0;
-  let tenure = 0;
-  const joinRaw = get('입사일','join_date','입사년도');
-  if (joinRaw) {
-    const num = parseFloat(joinRaw);
-    if (!isNaN(num) && num < 100) {
-      tenure = num;
-    } else {
-      const d = new Date(joinRaw);
-      if (!isNaN(d)) tenure = Math.floor((Date.now() - d) / (1000*60*60*24*365.25));
-    }
-  }
-  const career = parseFloat(get('경력연수','career','경력')) || 0;
-  return {
-    name: get('이름','name'),
-    chief: get('Chief','chief','CHIEF','부문'),
-    cc: get('CC','cc'),
-    sil: get('실','sil'),
-    team: get('팀','team'),
-    position: get('직책','position','직위'),
-    salary,
-    grade: get('평가등급','grade','평가','등급'),
-    tenure,
-    career,
+  const career=parseFloat(get('경력연수','career','경력'))||0;
+  return{
+    name:get('이름','name'),chief:get('Chief','chief','CHIEF','부문'),
+    cc:get('CC','cc'),sil:get('실','sil'),team:get('팀','team'),
+    position:get('직책','position','직위'),salary,
+    grade:get('평가등급','grade','평가','등급'),tenure,career,
   };
 }
 
-function getFiltered() {
-  const chief = document.getElementById('fChief').value;
-  const cc = document.getElementById('fCC').value;
-  const sil = document.getElementById('fSil').value;
-  const team = document.getElementById('fTeam').value;
-  return allData.filter(d =>
-    (!chief || d.chief === chief) &&
-    (!cc || d.cc === cc) &&
-    (!sil || d.sil === sil) &&
-    (!team || d.team === team)
-  );
+function initFilters(){
+  SS_KEYS.forEach(key=>{
+    document.getElementById('ss-'+key+'-trigger').addEventListener('click',e=>{
+      e.stopPropagation();
+      const p=document.getElementById('ss-'+key+'-panel'),open=p.classList.contains('open');
+      closeAllSS(); if(!open){p.classList.add('open');document.getElementById('ss-'+key+'-input').focus();}
+    });
+    document.getElementById('ss-'+key+'-input').addEventListener('input',function(){renderSSList(key,this.value);});
+    renderSSList(key,'');
+  });
+  document.getElementById('filterBar').style.display='flex';
 }
+function closeAllSS(){SS_KEYS.forEach(k=>document.getElementById('ss-'+k+'-panel').classList.remove('open'));}
+document.addEventListener('click',closeAllSS);
 
-function unique(arr, key) {
-  return [...new Set(arr.map(d => d[key]).filter(Boolean))].sort();
-}
-
-function initFilters() {
-  document.getElementById('filterBar').style.display = 'flex';
-  populateSelect('fChief', unique(allData, 'chief'));
-  populateSelect('fCC', unique(allData, 'cc'));
-  populateSelect('fSil', unique(allData, 'sil'));
-  populateSelect('fTeam', unique(allData, 'team'));
-  ['fChief','fCC','fSil','fTeam'].forEach(id => {
-    document.getElementById(id).addEventListener('change', render);
+function renderSSList(key,query){
+  const values=unique(allData,key);
+  const q=query.toLowerCase();
+  const filtered=q?values.filter(v=>v.toLowerCase().includes(q)):values;
+  const list=document.getElementById('ss-'+key+'-list');
+  list.innerHTML='';
+  [{v:'',label:'전체'},...filtered.map(v=>({v,label:v}))].forEach(({v,label})=>{
+    const div=document.createElement('div');
+    div.className='ss-item'+(ssVal[key]===v?' sel':'');
+    div.textContent=label;
+    div.addEventListener('click',e=>{
+      e.stopPropagation();
+      ssVal[key]=v;
+      document.getElementById('ss-'+key+'-val').textContent=v||'전체';
+      document.getElementById('ss-'+key+'-input').value='';
+      renderSSList(key,''); closeAllSS(); render();
+    });
+    list.appendChild(div);
   });
 }
-
-function populateSelect(id, values) {
-  const sel = document.getElementById(id);
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">전체</option>';
-  values.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v; opt.textContent = v;
-    if (v === cur) opt.selected = true;
-    sel.appendChild(opt);
-  });
-}
-
-function resetFilters() {
-  ['fChief','fCC','fSil','fTeam'].forEach(id => document.getElementById(id).value = '');
+function resetFilters(){
+  SS_KEYS.forEach(k=>{ssVal[k]='';document.getElementById('ss-'+k+'-val').textContent='전체';document.getElementById('ss-'+k+'-input').value='';renderSSList(k,'');});
   render();
 }
 
-function median(arr) {
-  if (!arr.length) return 0;
-  const s = [...arr].sort((a,b) => a-b);
-  const m = Math.floor(s.length/2);
-  return s.length % 2 ? s[m] : (s[m-1]+s[m])/2;
+function getFiltered(){
+  return allData.filter(d=>(!ssVal.chief||d.chief===ssVal.chief)&&(!ssVal.cc||d.cc===ssVal.cc)&&(!ssVal.sil||d.sil===ssVal.sil)&&(!ssVal.team||d.team===ssVal.team));
 }
+function unique(arr,key){return[...new Set(arr.map(d=>d[key]).filter(Boolean))].sort();}
+function median(arr){if(!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function normGrade(raw){const v=(raw||'').trim();for(const g of GRADE_DEFS){if(g.match(v))return g.key;}return '-';}
 
-function fmtSalary(n) {
-  if (n >= 1e8) return (n/1e8).toFixed(1) + '억';
-  return Math.round(n/1e4) + '만원';
-}
-
-const GRADE_DEFS = [
-  { key: 'GE', label: 'Greatly Exceed / S', match: v => /^(greatly.?exceed|GE|S)$/i.test(v) },
-  { key: 'EX', label: 'Exceed / A',          match: v => /^(exceed|EX|A)$/i.test(v) },
-  { key: 'AC', label: 'Achieve / B',          match: v => /^(achieve|AC|B)$/i.test(v) },
-  { key: 'NI', label: 'Need Improvement / C', match: v => /^(need.?improvement|NI|C)$/i.test(v) },
-  { key: 'UN', label: 'Unsatisfactory / D',   match: v => /^(unsatisfactory|UN|D)$/i.test(v) },
-  { key: '-',  label: '-',                    match: () => true },
-];
-
-function normalizeGrade(raw) {
-  const v = (raw || '').trim();
-  for (const g of GRADE_DEFS) {
-    if (g.match(v)) return g.key;
-  }
-  return '-';
-}
-
-function gradeCounts(data) {
-  const map = {};
-  GRADE_DEFS.forEach(g => { map[g.key] = 0; });
-  data.forEach(d => { map[normalizeGrade(d.grade)]++; });
-  return map;
-}
-
-function countBy(data, key) {
-  const map = {};
-  data.forEach(d => {
-    const v = d[key] || '미입력';
-    map[v] = (map[v] || 0) + 1;
-  });
-  return map;
-}
-
-function tenureBuckets(data) {
-  const labels = ['1년 미만', '1년~3년 미만', '3년~5년 미만', '5년~10년 미만', '10년 이상'];
-  const counts = [0, 0, 0, 0, 0];
-  data.forEach(d => {
-    const t = d.tenure;
-    if (t < 1) counts[0]++;
-    else if (t < 3) counts[1]++;
-    else if (t < 5) counts[2]++;
-    else if (t < 10) counts[3]++;
-    else counts[4]++;
-  });
-  return { labels, counts };
-}
-
-function careerBuckets(data) {
-  const labels = ['4년 미만', '4년~8년 미만', '8년~12년 미만', '12년~16년 미만', '16년~20년 미만', '20년 이상'];
-  const counts = [0, 0, 0, 0, 0, 0];
-  data.forEach(d => {
-    const c = d.career;
-    if (c < 4) counts[0]++;
-    else if (c < 8) counts[1]++;
-    else if (c < 12) counts[2]++;
-    else if (c < 16) counts[3]++;
-    else if (c < 20) counts[4]++;
-    else counts[5]++;
-  });
-  return { labels, counts };
-}
-
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-}
-
-function makeBarChart(id, labels, data, color) {
-  destroyChart(id);
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets: [{ data, backgroundColor: color || COLORS[0], borderRadius: 4, borderSkipped: false }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { font: { size: 11 }, color: '#888' } },
-        y: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { font: { size: 11 }, color: '#888' } },
-      }
-    }
-  });
-}
-
-function makeMultiColorBar(id, labels, data) {
-  destroyChart(id);
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets: [{ data, backgroundColor: COLORS.slice(0, labels.length), borderRadius: 4, borderSkipped: false }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { font: { size: 11 }, color: '#888' } },
-        y: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { font: { size: 11 }, color: '#888', stepSize: 1 } },
-      }
-    }
-  });
-}
-
-function render() {
-  const data = getFiltered();
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  document.getElementById('countBadge').textContent = `${data.length.toLocaleString()}명 표시 중 (전체 ${allData.length.toLocaleString()}명)`;
-
-  const salaries = data.map(d => d.salary).filter(s => s > 0);
-  const avgSalary = salaries.length ? salaries.reduce((a,b)=>a+b,0)/salaries.length : 0;
-  const medSalary = median(salaries);
-
-  document.getElementById('statGrid').innerHTML = `
-    <div class="stat-card">
-      <div class="label">총 인원</div>
-      <div class="value">${data.length.toLocaleString()}<span style="font-size:14px;font-weight:400">명</span></div>
-    </div>
-    <div class="stat-card">
-      <div class="label">평균 연봉</div>
-      <div class="value">${fmtSalary(avgSalary)}</div>
-      <div class="sub">연봉 입력 ${salaries.length}명 기준</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">중위 연봉</div>
-      <div class="value">${fmtSalary(medSalary)}</div>
-      <div class="sub">상위 50% 기준점</div>
-    </div>
+function render(){
+  const data=getFiltered();
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('countBadge').textContent=`${data.length.toLocaleString()}명 표시 중 (전체 ${allData.length.toLocaleString()}명)`;
+  const sal=data.map(d=>d.salary).filter(s=>s>0);
+  const avg=sal.length?sal.reduce((a,b)=>a+b,0)/sal.length:0;
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat-card"><div class="lbl">총 인원</div><div class="val">${data.length.toLocaleString()}<span style="font-size:14px;font-weight:400">명</span></div></div>
+    <div class="stat-card"><div class="lbl">평균 연봉</div><div class="val" style="font-size:18px">${fmtSalary(avg)}</div><div class="sub">연봉 입력 ${sal.length}명 기준</div></div>
+    <div class="stat-card"><div class="lbl">중위 연봉</div><div class="val" style="font-size:18px">${fmtSalary(median(sal))}</div><div class="sub">상위 50% 기준점</div></div>
   `;
-
   buildCharts(data);
 }
 
-function buildCharts(data) {
-  document.getElementById('chartGrid').innerHTML = `
-    <div class="chart-card">
-      <h3>평가등급별 인원</h3>
-      <div id="legendGrade" class="legend"></div>
-      <div class="chart-wrap" style="height:220px"><canvas id="cGrade" role="img" aria-label="평가등급별 인원 막대차트"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h3>직책별 인원</h3>
-      <div id="legendPos" class="legend"></div>
-      <div class="chart-wrap" style="height:220px"><canvas id="cPos" role="img" aria-label="직책별 인원 막대차트"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h3>근속기간별 인원</h3>
-      <div class="chart-wrap" style="height:220px"><canvas id="cTenure" role="img" aria-label="근속기간별 인원 막대차트"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h3>경력별 인원</h3>
-      <div class="chart-wrap" style="height:220px"><canvas id="cCareer" role="img" aria-label="경력별 인원 막대차트"></canvas></div>
-    </div>
-  `;
-
-  const gMap = gradeCounts(data);
-  const gradeLabels = GRADE_DEFS.map(g => g.label);
-  const gradeVals   = GRADE_DEFS.map(g => gMap[g.key] || 0);
-  const gradeColors = ['#3266ad','#1d9e75','#7f77dd','#ba7517','#e24b4a','#888780'];
-  const legendGrade = document.getElementById('legendGrade');
-  GRADE_DEFS.forEach((g, i) => {
-    const span = document.createElement('span');
-    span.className = 'legend-item';
-    span.innerHTML = `<span class="legend-dot" style="background:${gradeColors[i]}"></span>${g.label} <strong>${gradeVals[i]}</strong>명`;
-    legendGrade.appendChild(span);
-  });
-  destroyChart('cGrade');
-  new Chart(document.getElementById('cGrade').getContext('2d'), {
-    type: 'bar',
-    data: { labels: GRADE_DEFS.map(g => g.label), datasets: [{ data: gradeVals, backgroundColor: gradeColors, borderRadius: 4, borderSkipped: false }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { font: { size: 10 }, color: '#888', maxRotation: 30 } },
-        y: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { font: { size: 11 }, color: '#888', stepSize: 1 } },
-      }
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function mkChart(id,labels,vals,colors,onClickFn){
+  dc(id);
+  charts[id]=new Chart(document.getElementById(id),{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderRadius:4,borderSkipped:false}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},color:'#888',maxRotation:30}},
+        y:{grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:11},color:'#888'}},
+      },
+      onClick:onClickFn,
+      onHover:(e,el)=>{e.native.target.style.cursor=el.length?'pointer':'default';}
     }
   });
-  charts['cGrade'] = Chart.getChart('cGrade');
-
-  const posMap = countBy(data, 'position');
-  const posEntries = Object.entries(posMap).sort((a,b)=>b[1]-a[1]);
-  const posLabels = posEntries.map(e=>e[0]);
-  const posVals = posEntries.map(e=>e[1]);
-  const legendPos = document.getElementById('legendPos');
-  posLabels.forEach((l,i) => {
-    const span = document.createElement('span');
-    span.className = 'legend-item';
-    span.innerHTML = `<span class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></span>${l} <strong>${posVals[i]}</strong>명`;
-    legendPos.appendChild(span);
-  });
-  makeMultiColorBar('cPos', posLabels, posVals);
-
-  const tb = tenureBuckets(data);
-  makeBarChart('cTenure', tb.labels, tb.counts, COLORS[3]);
-
-  const cb = careerBuckets(data);
-  makeBarChart('cCareer', cb.labels, cb.counts, COLORS[4]);
 }
+
+function buildCharts(data){
+  document.getElementById('chartGrid').innerHTML=`
+    <div class="chart-card"><h3>평가등급별 인원</h3><p class="chart-hint">막대 클릭 시 해당 직원 목록이 표시됩니다</p><div id="lgGrade" class="legend"></div><div class="chart-wrap" style="height:220px"><canvas id="cGrade" role="img" aria-label="평가등급별 인원"></canvas></div></div>
+    <div class="chart-card"><h3>직책별 인원</h3><p class="chart-hint">막대 클릭 시 해당 직원 목록이 표시됩니다</p><div id="lgPos" class="legend"></div><div class="chart-wrap" style="height:220px"><canvas id="cPos" role="img" aria-label="직책별 인원"></canvas></div></div>
+    <div class="chart-card"><h3>근속기간별 인원</h3><p class="chart-hint">막대 클릭 시 해당 직원 목록이 표시됩니다</p><div class="chart-wrap" style="height:220px"><canvas id="cTenure" role="img" aria-label="근속기간별 인원"></canvas></div></div>
+    <div class="chart-card"><h3>경력별 인원</h3><p class="chart-hint">막대 클릭 시 해당 직원 목록이 표시됩니다</p><div class="chart-wrap" style="height:220px"><canvas id="cCareer" role="img" aria-label="경력별 인원"></canvas></div></div>
+  `;
+
+  const gMap={};GRADE_DEFS.forEach(g=>{gMap[g.key]=0;});data.forEach(d=>{gMap[normGrade(d.grade)]++;});
+  const gVals=GRADE_DEFS.map(g=>gMap[g.key]);
+  const lgGrade=document.getElementById('lgGrade');
+  GRADE_DEFS.forEach((g,i)=>{const s=document.createElement('span');s.className='legend-item';s.innerHTML=`<span class="legend-dot" style="background:${GRADE_COLORS[i]}"></span>${g.label} <strong>${gVals[i]}</strong>명`;lgGrade.appendChild(s);});
+  mkChart('cGrade',GRADE_DEFS.map(g=>g.label),gVals,GRADE_COLORS,(evt,els)=>{
+    if(!els.length)return;
+    const g=GRADE_DEFS[els[0].index];
+    showModal('평가등급: '+g.label,getFiltered().filter(d=>normGrade(d.grade)===g.key));
+  });
+
+  const posMap={};data.forEach(d=>{const v=d.position||'미입력';posMap[v]=(posMap[v]||0)+1;});
+  const posE=Object.entries(posMap).sort((a,b)=>b[1]-a[1]);
+  const pL=posE.map(e=>e[0]),pV=posE.map(e=>e[1]);
+  const lgPos=document.getElementById('lgPos');
+  pL.forEach((l,i)=>{const s=document.createElement('span');s.className='legend-item';s.innerHTML=`<span class="legend-dot" style="background:${POS_COLORS[i%POS_COLORS.length]}"></span>${l} <strong>${pV[i]}</strong>명`;lgPos.appendChild(s);});
+  mkChart('cPos',pL,pV,pL.map((_,i)=>POS_COLORS[i%POS_COLORS.length]),(evt,els)=>{
+    if(!els.length)return;
+    const pos=pL[els[0].index];
+    showModal('직책: '+pos,getFiltered().filter(d=>(d.position||'미입력')===pos));
+  });
+
+  mkChart('cTenure',TENURE_B.labels,TENURE_B.fn.map(f=>data.filter(f).length),TENURE_COLORS,(evt,els)=>{
+    if(!els.length)return;
+    const i=els[0].index;
+    showModal('근속기간: '+TENURE_B.labels[i],getFiltered().filter(TENURE_B.fn[i]));
+  });
+
+  mkChart('cCareer',CAREER_B.labels,CAREER_B.fn.map(f=>data.filter(f).length),CAREER_COLORS,(evt,els)=>{
+    if(!els.length)return;
+    const i=els[0].index;
+    showModal('경력: '+CAREER_B.labels[i],getFiltered().filter(CAREER_B.fn[i]));
+  });
+}
+
+function showModal(title,employees){
+  document.getElementById('modalTitle').textContent=`${title} (${employees.length}명)`;
+  const tbody=document.getElementById('modalTbody');
+  tbody.innerHTML='';
+  [...employees].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko')).forEach(d=>{
+    const dept=[d.chief,d.cc,d.sil,d.team].filter(Boolean).join(' > ');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${d.name||'-'}</td><td style="font-size:12px;color:var(--text2)">${dept||'-'}</td><td>${d.position||'-'}</td><td>${fmtSalary(d.salary)}</td><td>${d.grade||'-'}</td><td>${d.tenure>0?fmtTenure(d.tenure):'-'}</td><td>${d.career>0?d.career+'년':'-'}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('modalFoot').textContent=`총 ${employees.length.toLocaleString()}명`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
 loadFromURL();
 </script>
